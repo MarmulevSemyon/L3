@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CommentTree</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px;
+      background: #f7f7f7;
+      color: #222;
+    }
+
+    h1, h2 {
+      margin-bottom: 12px;
+    }
+
+    .panel {
+      background: #fff;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    input[type="text"],
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font: inherit;
+    }
+
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    button {
+      border: none;
+      border-radius: 6px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font: inherit;
+      background: #1f6feb;
+      color: white;
+    }
+
+    button.secondary {
+      background: #6c757d;
+    }
+
+    button.danger {
+      background: #d73a49;
+    }
+
+    button.small {
+      padding: 6px 10px;
+      font-size: 14px;
+    }
+
+    .comment {
+      background: #fff;
+      border-left: 4px solid #1f6feb;
+      border-radius: 6px;
+      padding: 12px;
+      margin-top: 12px;
+    }
+
+    .comment-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .comment-meta {
+      font-size: 13px;
+      color: #666;
+    }
+
+    .comment-body {
+      white-space: pre-wrap;
+      margin-bottom: 10px;
+    }
+
+    .comment-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .children {
+      margin-left: 24px;
+      margin-top: 8px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .empty {
+      color: #666;
+      font-style: italic;
+    }
+
+    .status {
+      margin-top: 8px;
+      font-size: 14px;
+      color: #444;
+    }
+
+    .error {
+      color: #b42318;
+    }
+
+    .success {
+      color: #067647;
+    }
+  </style>
+</head>
+<body>
+  <h1>CommentTree</h1>
+
+  <div class="panel">
+    <h2>Поиск комментариев</h2>
+    <div class="row">
+      <input id="searchInput" type="text" placeholder="Введите ключевое слово" />
+      <button id="searchBtn">Найти</button>
+      <button id="resetBtn" class="secondary">Сбросить</button>
+    </div>
+    <div id="searchStatus" class="status"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Новый комментарий</h2>
+    <div class="row">
+      <input id="authorInput" type="text" placeholder="Ваше имя" />
+    </div>
+    <div class="row" style="margin-top: 8px;">
+      <textarea id="bodyInput" placeholder="Текст комментария"></textarea>
+    </div>
+    <div class="row" style="margin-top: 8px;">
+      <button id="createBtn">Добавить комментарий</button>
+    </div>
+    <div id="createStatus" class="status"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Комментарии</h2>
+    <div id="commentsContainer"></div>
+  </div>
+
+  <script>
+    const commentsContainer = document.getElementById("commentsContainer");
+    const searchInput = document.getElementById("searchInput");
+    const searchBtn = document.getElementById("searchBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const searchStatus = document.getElementById("searchStatus");
+
+    const authorInput = document.getElementById("authorInput");
+    const bodyInput = document.getElementById("bodyInput");
+    const createBtn = document.getElementById("createBtn");
+    const createStatus = document.getElementById("createStatus");
+
+    let searchMode = false;
+
+    async function requestJSON(url, options = {}) {
+      const response = await fetch(url, options);
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || "Ошибка запроса");
+      }
+
+      return data;
+    }
+
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      if (Number.isNaN(date.getTime())) {
+        return dateString;
+      }
+      return date.toLocaleString("ru-RU");
+    }
+
+    function setStatus(element, message, type = "") {
+      element.textContent = message;
+      element.className = "status";
+      if (type) {
+        element.classList.add(type);
+      }
+    }
+
+    function clearStatus(element) {
+      element.textContent = "";
+      element.className = "status";
+    }
+
+    function createReplyForm(parentId, onSuccess) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "panel";
+      wrapper.style.marginTop = "8px";
+
+      const author = document.createElement("input");
+      author.type = "text";
+      author.placeholder = "Ваше имя";
+
+      const body = document.createElement("textarea");
+      body.placeholder = "Текст ответа";
+
+      const actions = document.createElement("div");
+      actions.className = "row";
+      actions.style.marginTop = "8px";
+
+      const submitBtn = document.createElement("button");
+      submitBtn.textContent = "Отправить ответ";
+      submitBtn.className = "small";
+
+      const cancelBtn = document.createElement("button");
+      cancelBtn.textContent = "Отмена";
+      cancelBtn.className = "secondary small";
+
+      const status = document.createElement("div");
+      status.className = "status";
+
+      submitBtn.addEventListener("click", async () => {
+        clearStatus(status);
+
+        try {
+          await requestJSON("/comments", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              parent_id: parentId,
+              author: author.value,
+              body: body.value
+            })
+          });
+
+          setStatus(status, "Ответ добавлен", "success");
+          onSuccess();
+        } catch (error) {
+          setStatus(status, error.message, "error");
+        }
+      });
+
+      cancelBtn.addEventListener("click", () => {
+        wrapper.remove();
+      });
+
+      actions.appendChild(submitBtn);
+      actions.appendChild(cancelBtn);
+
+      wrapper.appendChild(author);
+      wrapper.appendChild(body);
+      wrapper.appendChild(actions);
+      wrapper.appendChild(status);
+
+      return wrapper;
+    }
+
+    function renderComment(comment) {
+      const node = document.createElement("div");
+      node.className = "comment";
+
+      const header = document.createElement("div");
+      header.className = "comment-header";
+
+      const title = document.createElement("strong");
+      title.textContent = comment.author || "Без автора";
+
+      const meta = document.createElement("div");
+      meta.className = "comment-meta";
+      meta.textContent = `Создан: ${formatDate(comment.created_at)}`;
+
+      header.appendChild(title);
+      header.appendChild(meta);
+
+      const body = document.createElement("div");
+      body.className = "comment-body";
+      body.textContent = comment.body;
+
+      const actions = document.createElement("div");
+      actions.className = "comment-actions";
+
+      const replyBtn = document.createElement("button");
+      replyBtn.textContent = "Ответить";
+      replyBtn.className = "small";
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "Удалить";
+      deleteBtn.className = "danger small";
+
+      actions.appendChild(replyBtn);
+      actions.appendChild(deleteBtn);
+
+      const replyBox = document.createElement("div");
+      replyBox.className = "hidden";
+
+      replyBtn.addEventListener("click", () => {
+        if (replyBox.childElementCount > 0) {
+          replyBox.innerHTML = "";
+          replyBox.classList.add("hidden");
+          return;
+        }
+
+        const form = createReplyForm(comment.id, async () => {
+          replyBox.innerHTML = "";
+          replyBox.classList.add("hidden");
+          await loadComments();
+        });
+
+        replyBox.appendChild(form);
+        replyBox.classList.remove("hidden");
+      });
+
+      deleteBtn.addEventListener("click", async () => {
+        const confirmed = window.confirm("Удалить комментарий и все вложенные ответы?");
+        if (!confirmed) {
+          return;
+        }
+
+        try {
+          await fetch(`/comments/${comment.id}`, {
+            method: "DELETE"
+          }).then(async (response) => {
+            if (!response.ok) {
+              const data = await response.json().catch(() => ({}));
+              throw new Error(data.error || "Не удалось удалить комментарий");
+            }
+          });
+
+          await loadComments();
+        } catch (error) {
+          window.alert(error.message);
+        }
+      });
+
+      node.appendChild(header);
+      node.appendChild(body);
+      node.appendChild(actions);
+      node.appendChild(replyBox);
+
+      if (Array.isArray(comment.children) && comment.children.length > 0) {
+        const children = document.createElement("div");
+        children.className = "children";
+
+        comment.children.forEach((child) => {
+          children.appendChild(renderComment(child));
+        });
+
+        node.appendChild(children);
+      }
+
+      return node;
+    }
+
+    function renderComments(comments) {
+      commentsContainer.innerHTML = "";
+
+      if (!Array.isArray(comments) || comments.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "Комментариев пока нет";
+        commentsContainer.appendChild(empty);
+        return;
+      }
+
+      comments.forEach((comment) => {
+        commentsContainer.appendChild(renderComment(comment));
+      });
+    }
+
+    async function loadComments() {
+      clearStatus(searchStatus);
+
+      try {
+        if (searchMode) {
+          const query = searchInput.value.trim();
+
+          const data = await requestJSON("/comments/search", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ query })
+          });
+
+          renderComments(data.comments || []);
+          setStatus(searchStatus, `Найдено: ${data.total ?? 0}`, "success");
+          return;
+        }
+
+        const data = await requestJSON("/comments/all?sort_by=created_at&order=asc");
+        renderComments(data.comments || []);
+      } catch (error) {
+        commentsContainer.innerHTML = "";
+        const message = document.createElement("div");
+        message.className = "empty error";
+        message.textContent = error.message;
+        commentsContainer.appendChild(message);
+      }
+    }
+
+    createBtn.addEventListener("click", async () => {
+      clearStatus(createStatus);
+
+      try {
+        await requestJSON("/comments", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            author: authorInput.value,
+            body: bodyInput.value
+          })
+        });
+
+        authorInput.value = "";
+        bodyInput.value = "";
+
+        setStatus(createStatus, "Комментарий добавлен", "success");
+        searchMode = false;
+        await loadComments();
+      } catch (error) {
+        setStatus(createStatus, error.message, "error");
+      }
+    });
+
+    searchBtn.addEventListener("click", async () => {
+      const query = searchInput.value.trim();
+      if (!query) {
+        setStatus(searchStatus, "Введите текст для поиска", "error");
+        return;
+      }
+
+      searchMode = true;
+      await loadComments();
+    });
+
+    resetBtn.addEventListener("click", async () => {
+      searchInput.value = "";
+      searchMode = false;
+      clearStatus(searchStatus);
+      await loadComments();
+    });
+
+    loadComments();
+  </script>
+</body>
+</html>

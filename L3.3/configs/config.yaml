@@ -1,0 +1,12 @@
+app:
+  name: "commenttree"
+
+http:
+  host: "0.0.0.0"
+  port: 8080
+  read_timeout: "5s"
+  write_timeout: "10s"
+  idle_timeout: "60s"
+
+postgres:
+  dsn: "postgres://postgres:postgres@localhost:5432/commenttree?sslmode=disable"
