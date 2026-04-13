@@ -1,0 +1,4 @@
+log_level: "debug"
+addr: "localhost:8080"
+master_dsn: "postgres://postgres:123@localhost:5433/shortener?sslmode=disable"
+slaveDSNs: []

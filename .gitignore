@@ -1,3 +1,4 @@
 *.pprof
 L3.1/.env
 **/bin/
+ex.md
