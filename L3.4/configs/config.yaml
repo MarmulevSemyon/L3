@@ -1,0 +1,23 @@
+app:
+  port: "8080"
+
+postgres:
+  dsn: "postgres://postgres:postgres@postgres:5432/image_processor?sslmode=disable"
+
+kafka:
+  brokers:
+    - "kafka:9092"
+  topic: "image-jobs"
+  group_id: "image-processor-group"
+  dlq_topic: "image-jobs-dlq"
+
+storage:
+  original_dir: "./uploads/original"
+  processed_dir: "./uploads/processed"
+  thumbs_dir: "./uploads/thumbs"
+
+image:
+  resize_width: 1024
+  thumb_width: 200
+  thumb_height: 200
+  watermark_text: "ImageProcessor"

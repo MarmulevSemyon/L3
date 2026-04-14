@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>ImageProcessor</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>ImageProcessor</h1>
+
+    <form id="uploadForm">
+      <input type="file" id="fileInput" name="file" required />
+
+      <label><input type="checkbox" id="resize" /> Resize</label>
+      <label><input type="checkbox" id="thumb" /> Thumbnail</label>
+      <label><input type="checkbox" id="watermark" /> Watermark</label>
+
+      <button type="submit">Загрузить</button>
+    </form>
+
+    <hr />
+
+    <div id="images"></div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
