@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>EventBooker — Админ</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <h1>Админ-панель</h1>
+
+  <section>
+    <h2>Создать мероприятие</h2>
+    <input id="title" placeholder="Название" />
+    <input id="description" placeholder="Описание" />
+    <input id="event_date" type="datetime-local" step="60" />
+    <input id="total_spots" type="number" min="1" placeholder="Количество мест" />
+    <input id="booking_ttl_min" type="number" min="1" placeholder="TTL брони в минутах" />
+    <label>
+      <input id="requires_payment" type="checkbox" checked />
+      Требует подтверждение
+    </label>
+    <button type="button" onclick="submitEventForm()">Создать</button>
+  </section>
+
+  <section>
+    <h2>Мероприятия и статус</h2>
+    <button type="button" onclick="loadAdminEvents()">Обновить</button>
+    <div id="admin-events"></div>
+  </section>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

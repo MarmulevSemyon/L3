@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>EventBooker — Пользователь</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <h1>EventBooker</h1>
+
+  <section>
+    <h2>Создать пользователя</h2>
+    <input id="username" placeholder="Имя пользователя" />
+    <button type="button" onclick="createUser()">Создать</button>
+  </section>
+
+  <section>
+    <h2>Текущий пользователь</h2>
+    <select id="currentUser"></select>
+    <button type="button" onclick="loadUsers()">Обновить список пользователей</button>
+  </section>
+
+  <section>
+    <h2>Мероприятия</h2>
+    <button type="button" onclick="loadUserEvents()">Обновить</button>
+    <div id="user-events"></div>
+  </section>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
