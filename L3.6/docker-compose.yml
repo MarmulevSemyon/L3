@@ -1,0 +1,53 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: salestracker-postgres
+    environment:
+      POSTGRES_DB: salestracker
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - salestracker_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d salestracker"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Если нужен доступ к БД с хоста — раскомментируй:
+    # ports:
+    #   - "5433:5432"
+
+  migrate:
+    image: migrate/migrate:4
+    container_name: salestracker-migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./migrations:/migrations:ro
+    command:
+      [
+        "-path", "/migrations",
+        "-database", "postgres://postgres:postgres@postgres:5432/salestracker?sslmode=disable",
+        "up"
+      ]
+    restart: "no"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: salestracker-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      CONFIG_PATH: /app/config/docker.yaml
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+volumes:
+  salestracker_pg_data:

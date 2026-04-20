@@ -1,0 +1,7 @@
+http:
+  port: "8080"
+  mode: "release"
+
+db:
+  master_dsn: "postgres://postgres:postgres@postgres:5432/salestracker?sslmode=disable"
+  slave_dsns: []
