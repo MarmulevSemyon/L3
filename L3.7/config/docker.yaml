@@ -1,0 +1,10 @@
+http:
+  port: "8080"
+  mode: "debug"
+
+db:
+  master_dsn: "postgres://postgres:postgres@postgres:5432/warehousecontrol?sslmode=disable"
+  slave_dsns: []
+
+jwt:
+  secret: "warehouse-secret"

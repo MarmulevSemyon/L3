@@ -1,22 +1,22 @@
 services:
   postgres:
     image: postgres:16
-    container_name: salestracker-postgres
+    container_name: warehousecontrol-postgres
     environment:
-      POSTGRES_DB: salestracker
+      POSTGRES_DB: warehousecontrol
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     volumes:
-      - salestracker_pg_data:/var/lib/postgresql/data
+      - warehousecontrol_pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d salestracker"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d warehousecontrol"]
       interval: 5s
       timeout: 5s
       retries: 10
 
   migrate:
     image: migrate/migrate:4
-    container_name: salestracker-migrate
+    container_name: warehousecontrol-migrate
     depends_on:
       postgres:
         condition: service_healthy
@@ -25,7 +25,7 @@ services:
     command:
       [
         "-path", "/migrations",
-        "-database", "postgres://postgres:postgres@postgres:5432/salestracker?sslmode=disable",
+        "-database", "postgres://postgres:postgres@postgres:5432/warehousecontrol?sslmode=disable",
         "up"
       ]
     restart: "no"
@@ -34,7 +34,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: salestracker-app
+    container_name: warehousecontrol-app
     depends_on:
       postgres:
         condition: service_healthy
@@ -47,4 +47,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  salestracker_pg_data:
+  warehousecontrol_pg_data:
